@@ -1,0 +1,141 @@
+{
+  "name": "1.08-ops-billing-payments",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversas"
+            },
+            {
+              "name": "persona_ia"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "nome"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "eee7d03f-e0ed-418a-9095-28dddfb55687",
+      "name": "Input para consultar horario livre na Agenda"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.conversas }}",
+        "options": {
+          "systemMessage": "=# 🛑 FUNÇÃO EXCLUSIVA:\nSeu papel aqui é EXCLUSIVO: auxiliar o cliente em dúvidas ou problemas relacionados a pagamentos gerais, confirmação de Pix, cobranças, segunda via de boletos, cartões, notas fiscais, recibos ou estornos na Nine Barbearia. Você não agenda e não tira dúvidas de assinatura do clube aqui; seu foco é a parte financeira geral.\n\n# 💳 REGRAS E DIRETRIZES FINANCEIRAS:\n- **Chave Pix Geral (Pagamentos Avulsos):** Quando o cliente solicitar a chave Pix para realizar pagamentos gerais (serviços avulsos ou produtos, que não sejam o clube de assinatura), você DEVE seguir estritamente este formato de resposta:\n  1. 1. Cumprimente o cliente pelo nome e diga a frase: *\"A chave Pix é o e-mail abaixo:\"*\n  2. Pule linhas e coloque **apenas** o e-mail da chave Pix totalmente isolado, sem nenhuma palavra ou pontuação grudada junto dele (exatamente assim: `nine9barbearia@gmail.com`).\n- **Cobranças e Duplicidades:** Se houver dúvidas sobre pagamentos, cobranças duplicadas ou notas fiscais/recibos, trate com total empatia e colete os detalhes necessários para encaminhar o caso para a equipe financeira.\n- **Estornos e Problemas Bancários:** Oriente o cliente com calmaria, tranquilizando-o e informando que a situação será verificada.\n\n## DIRETRIZES DE ATENDIMENTO\n1. **Empatia e Cautela:** Questões financeiras exigem um tom calmo, prestativo e seguro. Nunca altere o tom e mostre total disponibilidade para resolver.\n\nPara responder, utilize sua Persona: \n{{ $json.persona_ia }}\n\n# 👤 IDENTIFICAÇÃO DO CLIENTE:\n- Nome do cliente: {{ $json.nome }}\n\n⚠️ REGRA ABSOLUTA SOBRE O NOME:\nVocê JÁ SABE que o cliente se chama {{ $json.nome }}. É TERMINANTEMENTE PROIBIDO perguntar o nome dele. Chame-o pelo primeiro nome de forma natural, empática e receptiva em todas as suas respostas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "05dad6e7-3b16-401c-9984-a966a2aa13a2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "af6243e2-504b-402c-a536-553c59236324",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id_conversa }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        256,
+        208
+      ],
+      "id": "528df9f5-d492-4d3c-b12b-3cfaa44f5b72",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input para consultar horario livre na Agenda": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "de7586b5-c0a4-4a81-83f9-3a3599de16d4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "ouRcPteXU5nwIs4L",
+  "tags": []
+}

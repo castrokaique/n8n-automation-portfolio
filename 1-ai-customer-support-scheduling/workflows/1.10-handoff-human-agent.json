@@ -1,0 +1,141 @@
+{
+  "name": "1.10-handoff-human-agent",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversas"
+            },
+            {
+              "name": "persona_ia"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "nome"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "746c3c6f-3943-47af-ac4c-25b7e8b9042e",
+      "name": "Input para consultar horario livre na Agenda"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.conversas }}",
+        "options": {
+          "systemMessage": "=# 🛑 FUNÇÃO EXCLUSIVA:\nSeu papel aqui é EXCLUSIVO: atender clientes que solicitam expressamente falar com uma pessoa real, demonstram insatisfação, frustração, raiva com o atendimento automático ou relatam que o robô não resolveu o problema. Seu foco é acalmar, acolher com gentileza e pedir para o cliente aguardar o suporte humano.\n\n## DIRETRIZES DE ATENDIMENTO\n1. **Acolhimento Gentil e Empático:** Nunca discuta com o cliente, não tente justificar falhas do sistema e não force a continuação do atendimento automático se ele estiver irritado ou exigir um humano. \n2. **Pedido de Espera Educado:** Peça com muita calma e gentileza para ele aguardar, informando que o atendimento humano já está sendo acionado \n\nPara responder, utilize sua Persona: \n{{ $json.persona_ia }}\n\n# 👤 IDENTIFICAÇÃO DO CLIENTE:\n- Nome do cliente: {{ $json.nome }}\n\n⚠️ REGRA ABSOLUTA SOBRE O NOME:\nVocê JÁ SABE que o cliente se chama {{ $json.nome }}. É TERMINANTEMENTE PROIBIDO perguntar o nome dele. Chame-o pelo primeiro nome de forma natural, empática e receptiva em todas as suas respostas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e7c4ee4a-19f8-458d-b6bc-a904755d8e5b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "5ff619db-d5ad-431b-a897-2b4f1a9f649d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id_conversa }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        256,
+        208
+      ],
+      "id": "4424ca8f-e937-4592-8362-062fd75d0343",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input para consultar horario livre na Agenda": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e0417729-025c-4a9d-b9db-17e8535ce213",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "QiKjT2Y4PWZmEbMM",
+  "tags": []
+}

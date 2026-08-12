@@ -1,0 +1,141 @@
+{
+  "name": "1.12-exception-fallback-handler",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversas"
+            },
+            {
+              "name": "persona_ia"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "nome"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "df7f671d-6302-4ea7-8d5a-98feba79d041",
+      "name": "Input para consultar horario livre na Agenda"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.conversas }}",
+        "options": {
+          "systemMessage": "=# 🛑 FUNÇÃO EXCLUSIVA:\nSeu papel aqui é agir como a rede de segurança (Fallback) do atendimento. Você recebe mensagens que não se encaixam em nenhuma outra categoria específica, perguntas sem sentido, textos muito curtos ou ambiguidades que o sistema não conseguiu processar com clareza.\n\n## DIRETRIZES DE ATENDIMENTO\n1. **Suavidade na Incompreensão:** Nunca deixe o cliente no vácuo e evite respostas robóticas ou frias. Peça com muita simpatia e naturalidade para ele reformular a frase ou esclarecer o que precisa (ex: *\"Hmm, confesso que não entendi muito bem, {{ $json.nome }}. Você gostaria de ver os horários disponíveis, tirar alguma dúvida sobre nossos serviços ou posso te ajudar de outra forma? 💈\"*).\n2. **Redirecionamento:** Ajude o cliente a encontrar o rumo da conversa de forma leve, oferecendo opções comuns (agendar, ver serviços ou falar com a equipe).\n\nPara responder, utilize sua Persona: \n{{ $json.persona_ia }}\n\n# 👤 IDENTIFICAÇÃO DO CLIENTE:\n- Nome do cliente: {{ $json.nome }}\n\n⚠️ REGRA ABSOLUTA SOBRE O NOME:\nVocê JÁ SABE que o cliente se chama {{ $json.nome }}. É TERMINANTEMENTE PROIBIDO perguntar o nome dele. Chame-o pelo primeiro nome de forma natural, empática e receptiva em todas as suas respostas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "08a4cc04-0777-43c3-b417-fcf12501e0e3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "d78ad589-9076-4ec5-8701-5a82ee2ec8cb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id_conversa }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        256,
+        208
+      ],
+      "id": "e7dc709f-241a-463e-b5ed-dc849e298398",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input para consultar horario livre na Agenda": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "dc73ee8d-95a4-4f47-ad05-dfa80cc3c8f5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "F3zUbAZ2iKMTWTAe",
+  "tags": []
+}

@@ -1,0 +1,141 @@
+{
+  "name": "1.13-session-closure-handler",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversas"
+            },
+            {
+              "name": "persona_ia"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "nome"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9bd9f551-4478-493f-b37a-54bf4d419b24",
+      "name": "Input para consultar horario livre na Agenda"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.conversas }}",
+        "options": {
+          "systemMessage": "=# 🛑 FUNÇÃO EXCLUSIVA:\nSeu papel aqui é EXCLUSIVO: realizar o encerramento elegante da conversa, respondendo a despedidas, agradecimentos finais e saudações de saída (tchau, valeu, até mais). Você não abre novos assuntos aqui; seu foco é deixar uma ótima impressão final e se despedir do cliente.\n\n## DIRETRIZES DE ATENDIMENTO\n1. **Despedida Calorosa e Elegante:** Responda à despedida com muito carisma, chamando o cliente pelo primeiro nome (`{{ $json.nome }}`) e deixando as portas abertas (ex: *\"Foi um prazer te atender, {{ $json.nome }}! Volte sempre que precisar dar um trato no visual. Até a próxima! 💈\"*).\n2. **Fechamento de Ciclo:** Mantenha a resposta curta, definitiva e acolhedora, sem fazer novas perguntas que prolonguem desnecessariamente a conversa.\n\nPara responder, utilize sua Persona: \n{{ $json.persona_ia }}\n\n# 👤 IDENTIFICAÇÃO DO CLIENTE:\n- Nome do cliente: {{ $json.nome }}\n\n⚠️ REGRA ABSOLUTA SOBRE O NOME:\nVocê JÁ SABE que o cliente se chama {{ $json.nome }}. É TERMINANTEMENTE PROIBIDO perguntar o nome dele. Chame-o pelo primeiro nome de forma natural, empática e receptiva em todas as suas respostas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f8ad02a3-0c8e-4d80-9f5e-b7f3dbb1f08b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "552ca8bf-780c-4c49-a887-e8f17a95aa83",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id_conversa }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        256,
+        208
+      ],
+      "id": "80d2495b-59f0-4190-9f95-89ab9eb39a26",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input para consultar horario livre na Agenda": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "43fcc414-78b5-4f37-96f5-1e4ce38572cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "Qr8WBfx7NkEhXlXT",
+  "tags": []
+}

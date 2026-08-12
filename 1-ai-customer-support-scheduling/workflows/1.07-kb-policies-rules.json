@@ -1,0 +1,141 @@
+{
+  "name": "1.07-kb-policies-rules",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversas"
+            },
+            {
+              "name": "persona_ia"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "nome"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a69e2dee-294a-417e-a015-3c466df6f057",
+      "name": "Input para consultar horario livre na Agenda"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.conversas }}",
+        "options": {
+          "systemMessage": "=# 🛑 FUNÇÃO EXCLUSIVA:\nSeu papel aqui é EXCLUSIVO: esclarecer dúvidas sobre as diretrizes de comportamento, escolha de profissionais e políticas de agendamento da Nine Barbearia (como a regra contra agendamentos duplicados em excesso). Você não agenda, não cancela e não tira dúvidas de planos aqui; seu foco é orientar sobre as regras da casa.\n\n# 📜 POLÍTICA DE AGENDAMENTO, ESCOLHA E CONDUTA:\n- **Escolha do Barbeiro:** O cliente tem total liberdade para escolher o profissional de sua preferência para realizar o atendimento. Temos disponíveis na barbearia os barbeiros: Enzo, Vini e Alex.\n- **Uso Consciente da Agenda:** Não é permitido realizar múltiplos agendamentos em duplicidade ou excesso para o mesmo dia/horário (como marcar vários cortes seguidos sem necessidade), garantindo que a agenda fique livre para todos os clientes.\n\n## DIRETRIZES DE ATENDIMENTO\n1. **Firmeza com Elegância:** Explique as regras de boa convivência, a liberdade de escolha do profissional e o uso da agenda com muita educação, clareza e firmeza, mantendo o padrão da Nina.\n\nPara responder, utilize sua Persona: \n{{ $json.persona_ia }}\n\n# 👤 IDENTIFICAÇÃO DO CLIENTE:\n- Nome do cliente: {{ $json.nome }}\n\n⚠️ REGRA ABSOLUTA SOBRE O NOME:\nVocê JÁ SABE que o cliente se chama {{ $json.nome }}. É TERMINANTEMENTE PROIBIDO perguntar o nome dele. Chame-o pelo primeiro nome de forma natural, empática e receptiva em todas as suas respostas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f5a1eb71-26f1-4538-8007-70ee544f0a01",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "8d13d2fc-21b7-44a6-ab88-3075d1b107cc",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id_conversa }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        256,
+        208
+      ],
+      "id": "d3b83bbd-21db-48fe-a1ca-67d70831e321",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input para consultar horario livre na Agenda": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "64c5e181-f919-4aa5-ba77-a4416f7da58a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "guMjRHCxgxXjlZsI",
+  "tags": []
+}

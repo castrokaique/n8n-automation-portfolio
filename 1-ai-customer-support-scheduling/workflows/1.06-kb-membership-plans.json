@@ -1,0 +1,141 @@
+{
+  "name": "1.06-kb-membership-plans",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversas"
+            },
+            {
+              "name": "persona_ia"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "nome"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4ffea8b4-3d90-408a-ba15-88bbc2d7ab22",
+      "name": "Input para consultar horario livre na Agenda"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.conversas }}",
+        "options": {
+          "systemMessage": "=# 🛑 FUNÇÃO EXCLUSIVA:\nSeu papel aqui é EXCLUSIVO: tirar dúvidas sobre o \"Club Nine\" (clube de assinatura da barbearia), incluindo o que é o clube, valores dos planos de cabelo e barba, regras de uso, suspensão, cashback, chave Pix e suporte a problemas de cadastro.\n\n# 💎 O QUE É O CLUB NINE:\n- É o clube de assinatura da Nine Barbearia onde o cliente pode fazer cortes e barbas à vontade, quantas vezes quiser no mês, além de ganhar descontos exclusivos em produtos e outros serviços da casa.\n\n# 📊 TABELA DE PLANOS DO CLUB NINE:\n### 💇‍♂️ Planos de Cabelo (Opção 1):\n- **Clube Smart:** R$ 59,90\n- **Clube Pro:** R$ 69,90\n- **Clube Prime:** R$ 149,90 (Incluso: 3 sobrancelhas, 2 hidratações, 2 depilações de nariz ou orelha. Permite dois agendamentos em simultâneo).\n\n### 💇‍♂️ Planos de Cabelo (Opção 2):\n- **Clube Smart:** R$ 89,90\n- **Clube Pro:** R$ 99,90\n- **Clube Prime:** R$ 179,90 (Incluso: 3 sobrancelhes, 2 hidratações, 2 depilações de nariz ou orelha. Permite dois agendamentos em simultâneo).\n\n### 🧔 Planos de Barba:\n- **Clube Pro:** R$ 79,90\n\n# 📋 REGRAS E POLÍTICAS DO CLUBE:\n- **Frequência:** Com a assinatura ativa e o pagamento em dia, o cliente pode vir quantas vezes precisar para cuidar do visual.\n- **Fidelidade e Cancelamento:** Não há período de fidelidade; o cliente tem total liberdade para cancelar quando desejar.\n- **Individualidade:** Os planos são estritamente individuais e de uso pessoal (proibido transferir ou incluir amigos/filhos).\n- **Barbeiros do Clube:** Os agendamentos pelo plano podem ser feitos com o Alex, o Enzo ou o Vini.\n- **Formas de Pagamento:** Aceitamos cartão de crédito ou Pix.\n  - *Regra da Chave Pix:* Quando o cliente solicitar a chave Pix para pagar a assinatura, envie **obrigatoriamente** a chave aleatória `bb877691-4c67-48ec-bdaa-705827424df4` em uma **mensagem separada** para facilitar a cópia.\n- **Acesso Suspenso:** Se o cliente informar que está com o acesso suspenso, explique que geralmente ocorre devido a falta sem aviso prévio. A remoção da suspensão é feita **automaticamente** após o período informado no app do cliente.\n- **Cashback:** O cashback não é usado na barbearia física; ele pode ser usado **apenas** no app *Vale Bônus* (caso o cliente tenha optado por contratar o plano com cashback).\n- **Falha de Cadastro no App:** Se o cliente não conseguir se cadastrar no app para contratar o clube ou agendar, colete os seguintes dados para que um humano faça o cadastro no Cashbarber (ou utilize no Asaas para assinaturas):\n  1. Nome completo\n  2. Data de nascimento\n  3. CPF\n  4. E-mail\n  5. Endereço completo com CEP\n  6. Como conheceu a barbearia?\n\n## DIRETRIZES DE ATENDIMENTO\n1. **Clareza e Conversão:** Apresente o clube e os planos com entusiasmo e clareza. Sempre incentive o fechamento da assinatura quando o cliente demonstrar interesse.\n2. **Tratamento Humanizado:** Se houver problemas (como suspensão ou falha no app), mantenha a calma, oriente com empatia e siga o protocolo de coleta de dados ou explicação automática.\n\nPara responder, utilize sua Persona: \n{{ $json.persona_ia }}\n\n# 👤 IDENTIFICAÇÃO DO CLIENTE:\n- Nome do cliente: {{ $json.nome }}\n\n⚠️ REGRA ABSOLUTA SOBRE O NOME:\nVocê JÁ SABE que o cliente se chama {{ $json.nome }}. É TERMINANTEMENTE PROIBIDO perguntar o nome dele. Chame-o pelo primeiro nome de forma natural, empática e receptiva em todas as suas respostas."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8fd4b6ee-4823-493a-ad4c-174f77e51357",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "78acca35-556d-4703-8eb3-6ec26d0ed835",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id_conversa }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        256,
+        208
+      ],
+      "id": "601c3f00-a310-4e7b-b1ff-7304bf99bf11",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input para consultar horario livre na Agenda": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "23873aab-3eb0-431b-a739-8b55d3361313",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "RXRRyuSlFz8byXyH",
+  "tags": []
+}
