@@ -308,6 +308,56 @@
               },
               "renameOutput": true,
               "outputKey": "EEG POLI"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "275a99ac-dce3-41a2-9718-38441dd65d86",
+                    "leftValue": "={{ $json.sub_pasta }}",
+                    "rightValue": "ENMG POLI",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ENMG POLI"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "469676df-4af8-4916-b4f0-6124beb0af2b",
+                    "leftValue": "={{ $json.sub_pasta }}",
+                    "rightValue": "NCR HRAS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NCR HRAS"
             }
           ]
         },
@@ -1567,7 +1617,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const idPlanilha = $('Trás o ID do sheets recem criado2').first().json.id_sheets_escala_recem_criada;\nconst dadosMesQueVem = $('Calcula a data do mês que vem').first().json;\n\nlet ano, mes;\nif (dadosMesQueVem.ano && dadosMesQueVem.mes) {\n  ano = Number(dadosMesQueVem.ano);\n  mes = Number(dadosMesQueVem.mes);\n} else if (dadosMesQueVem.nome_pasta_mes) {\n  const partes = dadosMesQueVem.nome_pasta_mes.split(' ');\n  mes = parseInt(partes[0].replace('.', ''), 10);\n  ano = parseInt(partes[2], 10);\n} else {\n  const hoje = new Date();\n  const proximoMesDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);\n  ano = proximoMesDate.getFullYear();\n  mes = proximoMesDate.getMonth() + 1;\n}\n\nconst mapaDias = {\n  0: 'Atende domingo?',\n  1: 'Atende segunda?',\n  2: 'Atende terça?',\n  3: 'Atende quarta?',\n  4: 'Atende quinta?',\n  5: 'Atende sexta?',\n  6: 'Atende sabado?'\n};\n\nconst totalDiasNoMes = new Date(ano, mes, 0).getDate();\nconst matrizValores = [];\n\n// O preenchimento começa na linha 5 da aba\nlet linhaAtual = 5;\n\nconst medicos = $input.all();\n\nmedicos.forEach((item, index) => {\n  const medico = item.json;\n  let gerouAlgumaData = false;\n\n  for (let dia = 1; dia <= totalDiasNoMes; dia++) {\n    const dataAtual = new Date(ano, mes - 1, dia);\n    const diaDaSemanaNum = dataAtual.getDay();\n    const colunaDiaSemana = mapaDias[diaDaSemanaNum];\n\n    if (medico[colunaDiaSemana] && medico[colunaDiaSemana].toString().trim().toLowerCase() === 'sim') {\n      const diaFormatado = String(dia).padStart(2, '0');\n      const mesFormatado = String(mes).padStart(2, '0');\n      const dataFinal = `${diaFormatado}/${mesFormatado}/${ano}`;\n\n      matrizValores.push([\n        dataFinal,                                           // Coluna B: Data\n        `=SE(B${linhaAtual}=\"\";\"\";B${linhaAtual})`,          // Coluna C: Fórmula Dia da Semana\n        medico['Tipo Atendimento'] || '',                    // Coluna D: Tipo de Atendimento\n        medico['Area'] || '',                                // Coluna E: Área \n        '',                                                  // Coluna F: Vazio\n        medico['Nome do Profissional'] || '',                // Coluna G: Nome do Médico / Responsável\n        medico['Qtd Vagas'] || '',                           // Coluna H: Qtde vagas\n        medico['Horário Início'] || '',                      // Coluna I: Hora início\n        medico['Horário Fim'] || '',                         // Coluna J: Hora fim\n        `=SEERRO((J${linhaAtual}-I${linhaAtual})/H${linhaAtual};\"\")` // Coluna K: Tempo médio\n      ]);\n      \n      linhaAtual++;\n      gerouAlgumaData = true;\n    }\n  }\n\n  // Adiciona as 3 linhas em branco entre os médicos mantendo a estrutura de fórmulas\n  if (gerouAlgumaData && index < medicos.length - 1) {\n    for (let i = 0; i < 3; i++) {\n      matrizValores.push([\n        \"\",\n        `=SE(B${linhaAtual}=\"\";\"\";B${linhaAtual})`,\n        \"\", \"\", \"\", \"\", \"\", \"\", \"\",\n        `=SEERRO((J${linhaAtual}-I${linhaAtual})/H${linhaAtual};\"\")`\n      ]);\n      linhaAtual++;\n    }\n  }\n});\n\nreturn [{\n  json: {\n    id_sheets_escala_recem_criada: idPlanilha,\n    values: matrizValores\n  }\n}];"
+        "jsCode": "const idPlanilha = $('Trás o ID do sheets recem criado2').first().json.id_sheets_escala_recem_criada;\nconst dadosMesQueVem = $('Calcula a data do mês que vem').first().json;\n\nlet ano, mes;\nif (dadosMesQueVem.ano && dadosMesQueVem.mes) {\n  ano = Number(dadosMesQueVem.ano);\n  mes = Number(dadosMesQueVem.mes);\n} else if (dadosMesQueVem.nome_pasta_mes) {\n  const partes = dadosMesQueVem.nome_pasta_mes.split(' ');\n  mes = parseInt(partes[0].replace('.', ''), 10);\n  ano = parseInt(partes[2], 10);\n} else {\n  const hoje = new Date();\n  const proximoMesDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);\n  ano = proximoMesDate.getFullYear();\n  mes = proximoMesDate.getMonth() + 1;\n}\n\nconst mapaDias = {\n  0: 'Atende domingo?',\n  1: 'Atende segunda?',\n  2: 'Atende terça?',\n  3: 'Atende quarta?',\n  4: 'Atende quinta?',\n  5: 'Atende sexta?',\n  6: 'Atende sabado?'\n};\n\nconst totalDiasNoMes = new Date(ano, mes, 0).getDate();\nconst matrizValores = [];\n\n// O preenchimento começa na linha 5 da aba\nlet linhaAtual = 5;\n\nconst medicos = $input.all();\n\nmedicos.forEach((item, index) => {\n  const medico = item.json;\n  let gerouAlgumaData = false;\n\n  for (let dia = 1; dia <= totalDiasNoMes; dia++) {\n    const dataAtual = new Date(ano, mes - 1, dia);\n    const diaDaSemanaNum = dataAtual.getDay();\n    const colunaDiaSemana = mapaDias[diaDaSemanaNum];\n\n    if (medico[colunaDiaSemana] && medico[colunaDiaSemana].toString().trim().toLowerCase() === 'sim') {\n      const diaFormatado = String(dia).padStart(2, '0');\n      const mesFormatado = String(mes).padStart(2, '0');\n      const dataFinal = `${diaFormatado}/${mesFormatado}/${ano}`;\n\n      matrizValores.push([\n        dataFinal,                                           // Posição 0 (Coluna B): Data\n        `=SE(B${linhaAtual}=\"\";\"\";B${linhaAtual})`,          // Posição 1 (Coluna C): Fórmula Dia da Semana\n        medico['Tipo Atendimento'] || '',                    // Posição 2 (Coluna D): Tipo de Atendimento\n        '',                                                  // Posição 3 (Coluna E): Vazio (Invertido)\n        medico['Area'] || '',                                // Posição 4 (Coluna F): Área / Eletroencefalograma (Invertido)\n        medico['Nome do Profissional'] || '',                // Posição 5 (Coluna G): Nome do Médico\n        medico['Qtd Vagas'] || '',                           // Posição 6 (Coluna H): Qtde vagas\n        medico['Horário Início'] || '',                      // Posição 7 (Coluna I): Hora início\n        medico['Horário Fim'] || '',                         // Posição 8 (Coluna J): Hora fim\n        `=SEERRO((J${linhaAtual}-I${linhaAtual})/H${linhaAtual};\"\")` // Posição 9 (Coluna K): Tempo médio\n      ]);\n      \n      linhaAtual++;\n      gerouAlgumaData = true;\n    }\n  }\n\n  // Adiciona as 3 linhas em branco entre os médicos mantendo a estrutura de fórmulas\n  if (gerouAlgumaData && index < medicos.length - 1) {\n    for (let i = 0; i < 3; i++) {\n      matrizValores.push([\n        \"\",\n        `=SE(B${linhaAtual}=\"\";\"\";B${linhaAtual})`,\n        \"\", \"\", \"\", \"\", \"\", \"\", \"\",\n        `=SEERRO((J${linhaAtual}-I${linhaAtual})/H${linhaAtual};\"\")`\n      ]);\n      linhaAtual++;\n    }\n  }\n});\n\nreturn [{\n  json: {\n    id_sheets_escala_recem_criada: idPlanilha,\n    values: matrizValores\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2260,6 +2310,186 @@
           "name": "Google Sheets - Pessoal - Kaique (data)"
         }
       }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Setor }}",
+                    "rightValue": "NCR HRAS - AMBULATORIO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bf6f49ab-a174-4cf3-a577-8c89ed793fa9"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "AMBULATORIO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c80602c8-a147-4769-b043-9631e1b6e11a",
+                    "leftValue": "={{ $json.Setor }}",
+                    "rightValue": "NCR HRAS - EEG HRAS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "EEG HRAS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1334e050-d3d6-4d44-b461-7122e3856193",
+                    "leftValue": "={{ $json.Setor }}",
+                    "rightValue": "NCR HRAS - ENMG HRAS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ENMG HRAS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2ab9dda4-8c2b-4da0-bc63-9ac96bf4f1b5",
+                    "leftValue": "={{ $json.Setor }}",
+                    "rightValue": "NCR HRAS - NEURO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NEURO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1440,
+        992
+      ],
+      "id": "b4911eb1-e24e-4afd-af79-298f5384367e",
+      "name": "filtra por relatorio2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Setor }}",
+                    "rightValue": "ENMG POLI - NEURO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bf6f49ab-a174-4cf3-a577-8c89ed793fa9"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NEURO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c80602c8-a147-4769-b043-9631e1b6e11a",
+                    "leftValue": "={{ $json.Setor }}",
+                    "rightValue": "ENMG POLI - REF",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REF"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1440,
+        720
+      ],
+      "id": "d3a4ccf1-ed49-4c4b-945e-e90f4e9aacb4",
+      "name": "filtra por relatorio3"
     }
   ],
   "pinData": {},
@@ -2396,6 +2626,20 @@
         [
           {
             "node": "filtra por relatorio1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "filtra por relatorio3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "filtra por relatorio2",
             "type": "main",
             "index": 0
           }
@@ -3043,7 +3287,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "4268a457-df83-45e2-8233-e7dc39736376",
+  "versionId": "9c892b96-8755-4446-83bc-e2c35825fd6b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
