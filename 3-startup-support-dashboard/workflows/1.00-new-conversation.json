@@ -1,0 +1,200 @@
+{
+  "name": "1-new-conversation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "25e5002d-017b-4afe-a7e2-6d6af2df183c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2ea5db9c-05a5-4c7e-b4c4-32b1894c7a54",
+      "name": "Webhook",
+      "webhookId": "25e5002d-017b-4afe-a7e2-6d6af2df183c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8f66c07f-1e27-4cfa-a5be-3c1cc4a4d098",
+              "name": "sleekflow_conversation_id",
+              "value": "={{ $json.body.contact.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "2881e859-7869-4d1f-bbf5-d320ddd4152d",
+              "name": "channel_id",
+              "value": "={{ $json.body.contact['conversation.last_message_channel_id'] }}",
+              "type": "string"
+            },
+            {
+              "id": "1dd72b7e-67e3-478c-b200-f1be14b259c8",
+              "name": "customer_country",
+              "value": "={{ $json.body.contact.Country }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "673ebda7-145c-484c-9952-d7456b9c5aba",
+      "name": "extract conversation id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c944df0-4e76-4976-ad0b-617f5ecd17dc",
+              "name": "protocol_number",
+              "value": "={{ $now.format('yyyyMMdd-HHmmss') }}-{{ $json.sleekflow_conversation_id.slice(0,8) }}",
+              "type": "string"
+            },
+            {
+              "id": "5fb70fe0-6b1d-4128-946b-04f890bf173b",
+              "name": "opened_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "9006439f-da66-4935-88d3-70739817d593",
+      "name": "Generate Protocol Number"
+    },
+    {
+      "parameters": {
+        "tableId": "dim_conversation_sessions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "protocol_number",
+              "fieldValue": "={{ $json.protocol_number }}"
+            },
+            {
+              "fieldId": "sleekflow_conversation_id",
+              "fieldValue": "={{ $json.sleekflow_conversation_id }}"
+            },
+            {
+              "fieldId": "opened_at",
+              "fieldValue": "={{ $json.opened_at }}"
+            },
+            {
+              "fieldId": "channel_id",
+              "fieldValue": "={{ $json.channel_id }}"
+            },
+            {
+              "fieldId": "customer_country",
+              "fieldValue": "={{ $json.customer_country }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "437d9b96-927c-4ab2-9259-7e661c29bd1a",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "d080cd90-6388-41c4-878e-d7f2ba6957ee",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "extract conversation id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract conversation id": {
+      "main": [
+        [
+          {
+            "node": "Generate Protocol Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Protocol Number": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8c51d501-e0b5-4a2f-9c1b-17484602375b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "rJ2jpKRf1uvOnL81",
+  "tags": []
+}

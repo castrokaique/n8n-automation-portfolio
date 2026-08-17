@@ -1,0 +1,866 @@
+{
+  "name": "3-close-conversation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "51f2b7bf-dad6-4d3e-9bf7-1b9d8f521ec0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "5ea4db8b-9a2b-42e1-a5d3-5487c9d4e207",
+      "name": "Webhook",
+      "webhookId": "51f2b7bf-dad6-4d3e-9bf7-1b9d8f521ec0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e97ebebf-287a-4e3a-80df-9b891b668773",
+              "name": "sleekflow_conversation_id",
+              "value": "={{ $json.body.contact.conversation_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "40f7ce29-4dce-4470-826e-215ef3aa5acf",
+      "name": "Set: Extract Fields"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "fact_messages",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "protocol_number",
+              "condition": "eq",
+              "keyValue": "={{ $json.protocol_number }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "137326e6-db5a-4367-ac52-c998f11f86df",
+      "name": "Get Messages in fact_messages",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega todas as mensagens que vieram do nó anterior (Get Messages)\nconst messages = $input.all().map(item => item.json);\n\n// Ordena por sent_at, do mais antigo pro mais recente (segurança extra)\nmessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));\n\n// Variáveis de controle\nlet pendingCustomerTimestamp = null;\nlet responseIntervals = [];\nlet lastAgentId = null;\n\nfor (const msg of messages) {\n  const sentAt = new Date(msg.sent_at);\n  if (msg.sender_type === 'customer') {\n    if (pendingCustomerTimestamp === null) {\n      pendingCustomerTimestamp = sentAt;\n    }\n  } else {\n    if (pendingCustomerTimestamp !== null) {\n      const diffSeconds = (sentAt - pendingCustomerTimestamp) / 1000;\n      responseIntervals.push(diffSeconds);\n      pendingCustomerTimestamp = null;\n    }\n    lastAgentId = msg.agent_id;\n  }\n}\n\nconst firstResponseTimeSeconds = responseIntervals.length > 0\n  ? Math.round(responseIntervals[0])\n  : null;\n\nconst averageResponseTimeSeconds = responseIntervals.length > 0\n  ? Math.round(\n      (responseIntervals.reduce((sum, val) => sum + val, 0) / responseIntervals.length) * 100\n    ) / 100\n  : null;\n\nconst firstCustomerMessage = messages.find(m => m.sender_type === 'customer');\nconst openedAt = firstCustomerMessage ? new Date(firstCustomerMessage.sent_at) : null;\nconst closedAt = new Date();\n\nconst averageHandleTimeSeconds = openedAt\n  ? Math.round((closedAt - openedAt) / 1000)\n  : null;\n\n// Verifica os tipos de remetente presentes na conversa\nconst hadHumanMessage = messages.some(msg => msg.sender_type === 'human');\nconst hadAiMessage = messages.some(msg => msg.sender_type === 'ai');\n\nlet conversationType;\nif (hadHumanMessage && hadAiMessage) {\n  conversationType = 'mixed';\n} else if (hadHumanMessage) {\n  conversationType = 'human';\n} else if (hadAiMessage) {\n  conversationType = 'ai';\n} else {\n  conversationType = null;\n}\n\nreturn [{\n  json: {\n    protocol_number: messages[0]?.protocol_number || null,\n    sleekflow_conversation_id: messages[0]?.sleekflow_conversation_id || null,\n    opened_at: openedAt ? openedAt.toISOString() : null,\n    closed_at: closedAt.toISOString(),\n    first_response_time_seconds: firstResponseTimeSeconds,\n    average_response_time_seconds: averageResponseTimeSeconds,\n    average_handle_time_seconds: averageHandleTimeSeconds,\n    agent_id: lastAgentId,\n    message_count: messages.length,\n    conversation_type: conversationType\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "66d3376a-e44d-454d-a837-79fa86f86d70",
+      "name": "calculates the times"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "dim_targets",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "kpi_name",
+              "condition": "eq",
+              "keyValue": "sla"
+            },
+            {
+              "keyName": "region",
+              "condition": "eq",
+              "keyValue": "global"
+            },
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a148c043-9b9a-4b47-ba17-bcee00860734",
+      "name": "Get sla target",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega os dados calculados no nó \"calculates the times\"\nconst metrics = $('calculates the times').first().json;\n\n// Pega a meta de SLA buscada no nó anterior\nconst target = $input.first().json;\n\n// Compara o FRT com o limite em segundos\nconst slaMet = metrics.first_response_time_seconds <= target.threshold_seconds;\n\n// Retorna tudo junto: os dados calculados + o resultado da comparação\nreturn [{\n  json: {\n    ...metrics,\n    sla_met: slaMet,\n    sla_threshold_seconds: target.threshold_seconds\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "1a9f7953-5dca-4611-b7d7-0aff24c7e6b4",
+      "name": "Check whether the SLA has been met"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b7f9414d-c0fa-4f90-9929-7c777f269875",
+              "name": "protocol_number",
+              "value": "={{ $('Check whether the SLA has been met').item.json.protocol_number }}",
+              "type": "string"
+            },
+            {
+              "id": "0bcab7d5-78f2-4b0c-a67b-cb005a19cfe0",
+              "name": "sleekflow_conversation_id",
+              "value": "={{ $('Check whether the SLA has been met').item.json.sleekflow_conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f3e1ecdf-6183-4027-ba6b-47cf9702a143",
+              "name": "channel_id",
+              "value": "={{ $('Get Protocol').item.json.channel_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ac63a392-736f-42cb-b7ed-43ee6e19a662",
+              "name": "category_id",
+              "value": "={{ $json.category_id }}",
+              "type": "string"
+            },
+            {
+              "id": "0d8a4ec8-9d40-4d6d-899a-1413d0f9bddb",
+              "name": "agent_id",
+              "value": "={{ $('Check whether the SLA has been met').item.json.agent_id }}",
+              "type": "string"
+            },
+            {
+              "id": "e3084aca-1e97-4937-9d49-47ea71a40b03",
+              "name": "opened_at",
+              "value": "={{ $('Check whether the SLA has been met').item.json.opened_at }}",
+              "type": "string"
+            },
+            {
+              "id": "640697c4-33ad-43d6-a38e-ba4cc17deed1",
+              "name": "closed_at",
+              "value": "={{ $('Check whether the SLA has been met').item.json.closed_at }}",
+              "type": "string"
+            },
+            {
+              "id": "37641f2c-c442-4ecf-a413-98afa7dc3a00",
+              "name": "conversation_type",
+              "value": "={{ $('Check whether the SLA has been met').item.json.conversation_type }}",
+              "type": "string"
+            },
+            {
+              "id": "7499785b-2cc3-4780-ad73-fb4b1e3bd252",
+              "name": "customer_country",
+              "value": "={{ $('Get Protocol').item.json.customer_country }}",
+              "type": "string"
+            },
+            {
+              "id": "ae05750d-10a9-47b7-8f8d-566ceabd65a9",
+              "name": "first_response_time_seconds",
+              "value": "={{ $('Check whether the SLA has been met').item.json.first_response_time_seconds }}",
+              "type": "string"
+            },
+            {
+              "id": "af6eeee7-1cb2-4650-8ba5-74ad642a7c15",
+              "name": "average_response_time_seconds",
+              "value": "={{ $('Check whether the SLA has been met').item.json.average_response_time_seconds }}",
+              "type": "string"
+            },
+            {
+              "id": "0bcf4858-1ef8-48bc-af29-e17845cad87e",
+              "name": "average_handle_time_seconds",
+              "value": "={{ $('Check whether the SLA has been met').item.json.average_handle_time_seconds }}",
+              "type": "string"
+            },
+            {
+              "id": "0478dec2-ee55-4e5b-89f2-b073e17792ac",
+              "name": "sla_met",
+              "value": "={{ $('Check whether the SLA has been met').item.json.sla_met }}",
+              "type": "string"
+            },
+            {
+              "id": "c4620524-a1a6-4d0b-9b78-edf3130d0495",
+              "name": "conversation_date",
+              "value": "={{ $('Check whether the SLA has been met').item.json.opened_at }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2944,
+        0
+      ],
+      "id": "472167ec-b1eb-4fd6-adb9-1bf7fbc12400",
+      "name": "Set: Prepare Final Data"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "dim_conversation_sessions",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sleekflow_conversation_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.sleekflow_conversation_id }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "open"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c791743a-4ca0-4aa1-a61c-71b6484634bc",
+      "name": "Get Protocol",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "fact_conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "protocol_number",
+              "fieldValue": "={{ $json.protocol_number }}"
+            },
+            {
+              "fieldId": "sleekflow_conversation_id",
+              "fieldValue": "={{ $json.sleekflow_conversation_id }}"
+            },
+            {
+              "fieldId": "channel_id",
+              "fieldValue": "={{ $json.channel_id }}"
+            },
+            {
+              "fieldId": "agent_id",
+              "fieldValue": "={{ $json.agent_id }}"
+            },
+            {
+              "fieldId": "opened_at",
+              "fieldValue": "={{ $json.opened_at }}"
+            },
+            {
+              "fieldId": "closed_at",
+              "fieldValue": "={{ $json.closed_at }}"
+            },
+            {
+              "fieldId": "conversation_type",
+              "fieldValue": "={{ $json.conversation_type }}"
+            },
+            {
+              "fieldId": "customer_country",
+              "fieldValue": "={{ $json.customer_country }}"
+            },
+            {
+              "fieldId": "first_response_time_seconds",
+              "fieldValue": "={{ $json.first_response_time_seconds }}"
+            },
+            {
+              "fieldId": "average_response_time_seconds",
+              "fieldValue": "={{ $json.average_response_time_seconds }}"
+            },
+            {
+              "fieldId": "average_handle_time_seconds",
+              "fieldValue": "={{ $json.average_handle_time_seconds }}"
+            },
+            {
+              "fieldId": "sla_met",
+              "fieldValue": "={{ $json.sla_met }}"
+            },
+            {
+              "fieldId": "conversation_date",
+              "fieldValue": "={{ $json.conversation_date }}"
+            },
+            {
+              "fieldId": "category_id",
+              "fieldValue": "={{ $json.category_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3152,
+        0
+      ],
+      "id": "46822cd8-150c-406e-a60b-ea17f3d44533",
+      "name": "Insert the data into the fact-conversation table",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "dim_conversation_sessions",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "protocol_number",
+              "condition": "eq",
+              "keyValue": "={{ $json.protocol_number }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "closed"
+            },
+            {
+              "fieldId": "closed_at",
+              "fieldValue": "={{ $json.closed_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3360,
+        0
+      ],
+      "id": "8ed4ef84-6ae2-4e53-b073-93a0b15c7a81",
+      "name": "close protocol session",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=conversation_{{ $json.protocol_number }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "e27df61f-4a2f-4d00-85e9-50b7d7fa40c2",
+      "name": "Provide the entire conversation for the AI to categorize",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "cc5a3fe7-d597-46ba-9596-f0866f7ad0bb",
+      "name": "Wait for the final messages to be recorded",
+      "webhookId": "ed26ae3a-e043-42ae-a486-a217bff13d9a"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega o item que veio do nó Redis (Get)\nconst redisData = $input.first().json;\n\n// redisData.propertyName é um array de strings JSON, já na ordem certa (graças ao Tail)\nconst messages = redisData.propertyName.map(str => JSON.parse(str));\n\n// Monta o texto formatado da conversa\nconst conversationLines = messages.map(msg => {\n  const speaker = msg.sender_type === 'customer' ? 'Cliente' \n                 : msg.sender_type === 'human' ? 'Atendente' \n                 : 'IA';\n  return `${speaker}: ${msg.text}`;\n});\n\nconst conversationText = conversationLines.join('\\n');\n\nreturn [{\n  json: {\n    conversation_text: conversationText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "41090728-3a21-4717-8802-07f052ac6c6c",
+      "name": "Code: Format Conversation History"
+    },
+    {
+      "parameters": {
+        "jsCode": "const conversationText = $json.conversation_text;\nconst categories = $json.category_lookup;\n\n// Monta a lista de categorias formatada pro prompt, incluindo a descrição de cada uma\nconst categoryList = categories\n  .map(cat => `- ${cat.category_name} (ID: ${cat.category_id}): ${cat.category_description || 'sem descrição'}`)\n  .join('\\n');\n\nconst prompt = `Você é um classificador de atendimentos de suporte ao cliente via WhatsApp.\n\nAnalise a conversa abaixo e escolha a categoria MAIS ESPECÍFICA e adequada dentre as opções disponíveis. A categoria escolhida será usada para gerar relatórios e insights de negócio, então a precisão é importante.\n\nCATEGORIAS DISPONÍVEIS:\n${categoryList}\n\nCONVERSA:\n${conversationText}\n\nResponda APENAS com o ID numérico da categoria escolhida, sem nenhum texto adicional, explicação ou pontuação. Exemplo de resposta válida: 2`;\n\nreturn [{\n  json: {\n    prompt: prompt,\n    category_lookup: categories\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        0
+      ],
+      "id": "6e534a1a-308c-406c-9757-bfdedae80d3c",
+      "name": "Code: Build Gemini Prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.prompt }] }] }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2496,
+        0
+      ],
+      "id": "1be610f1-a0f4-4984-bdb9-e6e7f9cf6628",
+      "name": "HTTP Request: Call Gemini API",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MHNV4B56vANnkfaV",
+          "name": "Gemini - Pessoal - Kaique (data)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "dim_categories"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "ee5f6ebd-3738-48f8-b415-8cf1331299d0",
+      "name": "Get the conversation categories",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega a resposta do Gemini\nconst geminiResponse = $input.first().json;\nconst rawText = geminiResponse.candidates[0].content.parts[0].text.trim();\n\n// Converte pra número\nconst categoryId = parseInt(rawText, 10);\n\n// Busca a lista de categorias (guardada desde o nó \"Build Classifier Input\")\nconst categoryLookup = $('Code: Build Classifier Input').first().json.category_lookup;\n\n// Valida se o ID retornado realmente existe na lista de categorias\nconst matchedCategory = categoryLookup.find(cat => cat.category_id === categoryId);\n\nif (!matchedCategory) {\n  // Caso a IA retorne algo inesperado (raro, mas precisamos nos proteger)\n  return [{\n    json: {\n      category_id: null,\n      category_name: null,\n      classification_error: `Resposta inesperada da IA: \"${rawText}\"`\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    category_id: matchedCategory.category_id,\n    category_name: matchedCategory.category_name\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        0
+      ],
+      "id": "70c7db53-bd42-471e-9c4b-10af4a1b47be",
+      "name": "Get the category"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=conversation_ {{ $('Check whether the SLA has been met').item.json.protocol_number }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3568,
+        0
+      ],
+      "id": "aaf8ad98-df17-4a04-9cb4-0dd1bf359fde",
+      "name": "Delete chat history",
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega o texto da conversa, montado lá atrás\nconst conversationText = $('Code: Format Conversation History').first().json.conversation_text;\n\n// Pega todas as categorias buscadas no Supabase (item atual)\nconst categoryRows = $input.all().map(item => item.json);\n\nreturn [{\n  json: {\n    conversation_text: conversationText,\n    category_lookup: categoryRows\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        0
+      ],
+      "id": "ab79133a-234c-48ec-92df-90115268c371",
+      "name": "Code: Build Classifier Input"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3776,
+        0
+      ],
+      "id": "7afcfc08-f554-457b-bf43-ebb0a72813bf",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.srv1742457.hstgr.cloud",
+            "content-length": "1714",
+            "content-type": "application/json; charset=utf-8",
+            "correlation-context": "messaging.message.conversation_id=01000000-c7ca-8aae-1ef7-08defa6b6f74",
+            "traceparent": "00-8f4cdca35b9a2f4332a20e414b68cbe6-556bbdf87293c043-00",
+            "x-forwarded-for": "52.229.248.60",
+            "x-forwarded-host": "n8n.srv1742457.hstgr.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "40272ac8dcd6",
+            "x-real-ip": "52.229.248.60",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "contact_id": "30af8e1f-b4b9-4673-9701-c3c69bcad4f7",
+            "contact": {
+              "id": "30af8e1f-b4b9-4673-9701-c3c69bcad4f7",
+              "company_id": "3525bd7b-6f8c-47b9-94ea-f59816570d79",
+              "first_name": "Isaque",
+              "last_name": "Nilton",
+              "picture_url": null,
+              "created_at": "2026-05-18T21:52:40.673Z",
+              "updated_at": "2026-08-15T01:20:39.339Z",
+              "last_contact": "2026-08-15T01:20:37.873Z",
+              "last_contact_from_customers": "2026-08-15T01:20:06.000Z",
+              "is_sandbox": false,
+              "is_shopify_profile": false,
+              "description": null,
+              "status": null,
+              "labels": [
+                {
+                  "LabelValue": "Teste Kaique",
+                  "LabelColor": "Green",
+                  "LabelType": "Normal"
+                }
+              ],
+              "life_cycle_id": null,
+              "Country": "Brazil",
+              "700fde07-e829-43a1-bce9-289f93b4ef14": "Brazil",
+              "PhoneNumber": "5511966048659",
+              "78c0f5d7-dbeb-4a12-9048-4a8a8eccc57c": "5511966048659",
+              "Subscriber": "true",
+              "4af64c81-bf31-4f20-8d9e-77d9f476ee33": "true",
+              "LastContactFromCustomers": "2026-08-15T01:20:06.000Z",
+              "e956615a-8bda-41ee-abf5-cb71fd2fa3e4": "2026-08-15T01:20:06.000Z",
+              "LastChannel": "whatsappcloudapi",
+              "3cb6a549-fecf-4324-a7e2-7866c8a34b72": "whatsappcloudapi",
+              "abertura": "2026-05-18T21:56:22.000Z",
+              "85eee999-b447-49bf-82e1-c59255f90897": "2026-05-18T21:56:22.000Z",
+              "LastContact": "2026-08-15T01:20:37.873Z",
+              "0e857361-87bb-4edc-8215-6f914a0e57d9": "2026-08-15T01:20:37.873Z",
+              "ContactOwner": "cae8e4b4-3d20-478b-bafb-91f0cfd3591f",
+              "9ae34be9-dc6f-4329-95c9-2aa5d67357e2": "cae8e4b4-3d20-478b-bafb-91f0cfd3591f",
+              "AssignedTeam": "1000000088",
+              "1c955541-71b2-4ad1-9203-428e31b8678d": "1000000088",
+              "conversation_id": "491fc5a0-8f16-428b-83f8-aae1689b6529",
+              "conversation.conversation_status": "closed",
+              "conversation.last_message_channel_id": "551150281517",
+              "PositionOfContactOwner": "Customer Support Specialist",
+              "WhatsAppBsuid": "BR.1722552119121322",
+              "WhatsAppUsername": null
+            }
+          },
+          "webhookUrl": "https://n8n.srv1742457.hstgr.cloud/webhook/51f2b7bf-dad6-4d3e-9bf7-1b9d8f521ec0",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wait for the final messages to be recorded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Extract Fields": {
+      "main": [
+        [
+          {
+            "node": "Get Protocol",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Messages in fact_messages": {
+      "main": [
+        [
+          {
+            "node": "calculates the times",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calculates the times": {
+      "main": [
+        [
+          {
+            "node": "Get sla target",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get sla target": {
+      "main": [
+        [
+          {
+            "node": "Check whether the SLA has been met",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check whether the SLA has been met": {
+      "main": [
+        [
+          {
+            "node": "Provide the entire conversation for the AI to categorize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Protocol": {
+      "main": [
+        [
+          {
+            "node": "Get Messages in fact_messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Prepare Final Data": {
+      "main": [
+        [
+          {
+            "node": "Insert the data into the fact-conversation table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert the data into the fact-conversation table": {
+      "main": [
+        [
+          {
+            "node": "close protocol session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Provide the entire conversation for the AI to categorize": {
+      "main": [
+        [
+          {
+            "node": "Code: Format Conversation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for the final messages to be recorded": {
+      "main": [
+        [
+          {
+            "node": "Set: Extract Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Format Conversation History": {
+      "main": [
+        [
+          {
+            "node": "Get the conversation categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Build Gemini Prompt": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request: Call Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the conversation categories": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Classifier Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request: Call Gemini API": {
+      "main": [
+        [
+          {
+            "node": "Get the category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the category": {
+      "main": [
+        [
+          {
+            "node": "Set: Prepare Final Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "close protocol session": {
+      "main": [
+        [
+          {
+            "node": "Delete chat history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Build Classifier Input": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Gemini Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete chat history": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a42b33b8-76a5-40e6-8edd-10a86eae3b6d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "SRzdbzTwqvX1wpKw",
+  "tags": []
+}

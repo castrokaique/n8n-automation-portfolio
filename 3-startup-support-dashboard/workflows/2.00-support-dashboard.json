@@ -1,0 +1,748 @@
+{
+  "name": "2-support-dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "68cc88a4-9591-4bb2-bcb5-f7082aa4255a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -848,
+        -240
+      ],
+      "id": "990ecd49-2a58-4204-91cf-999c77711ee1",
+      "name": "Webhook",
+      "webhookId": "68cc88a4-9591-4bb2-bcb5-f7082aa4255a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e804536-9808-42d7-99d9-ce1a4c4e65d9",
+              "name": "message_id",
+              "value": "={{ $json.body.message_id }}",
+              "type": "string"
+            },
+            {
+              "id": "5cd71c89-3564-46f7-baab-7730c9712cdc",
+              "name": "conversation_id",
+              "value": "={{ $json.body.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ab595b49-9595-4a10-ac92-a45ace709cfc",
+              "name": "sent_at",
+              "value": "={{ $json.body.message.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "9b16eaeb-06e9-44aa-ab77-3fdb14b494f0",
+              "name": "is_sent_from_sleekflow",
+              "value": "={{ $json.body.is_sent_from_sleekflow }}",
+              "type": "string"
+            },
+            {
+              "id": "11fc2011-dd31-404f-8a62-6dc7c73e0bf5",
+              "name": "staff_id",
+              "value": "={{ $json.body.sleekflow_staff_id }}",
+              "type": "string"
+            },
+            {
+              "id": "46c143a4-18d6-48aa-83cb-476a150f2f45",
+              "name": "message_delivery_type",
+              "value": "={{ $json.body.message.message_delivery_type }}",
+              "type": "string"
+            },
+            {
+              "id": "836eb507-5aeb-4182-b6f6-3a3a2b2d9c09",
+              "name": "message_text",
+              "value": "={{ $json.body.message.message_content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        -240
+      ],
+      "id": "0a02e6bb-a252-405f-8a83-c9a2d7c5b6a5",
+      "name": "filters the trigger"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message_delivery_type }}",
+                    "rightValue": "AiAgentAction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c04be712-f43b-4bd0-906e-15fd116debc1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ai"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2b266c14-7931-4b69-8b7b-ececdbbcc296",
+                    "leftValue": "={{ $json.message_delivery_type }}",
+                    "rightValue": "=Normal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "human"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        -368
+      ],
+      "id": "659edaea-2943-40da-a328-f7b576c24ada",
+      "name": "Separate the AI message from the human"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48f3f331-7aff-42fe-b4bd-abc9bda52edd",
+              "name": "sender_type",
+              "value": "ai",
+              "type": "string"
+            },
+            {
+              "id": "6732d670-b0d3-45e0-9aec-98e189359256",
+              "name": "agent_id",
+              "value": "ai-agent-test",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -512
+      ],
+      "id": "dd521150-7bc2-4411-8a91-fa3d9bc0bf69",
+      "name": "Sender Type = ai"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_sent_from_sleekflow }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "08fdb1b5-9691-4151-869b-3721e2f84566"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "company"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "761bfe90-c7f9-4769-918f-ed99537df68d",
+                    "leftValue": "={{ $json.is_sent_from_sleekflow }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "customer"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        -240
+      ],
+      "id": "a69ea41a-bd61-4973-bb2c-93626324d0d9",
+      "name": "Separate the company message from the customer's message"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48f3f331-7aff-42fe-b4bd-abc9bda52edd",
+              "name": "sender_type",
+              "value": "customer",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        0
+      ],
+      "id": "a762ae31-69a8-4249-be3d-201472a49ef3",
+      "name": "Sender Type = customer"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48f3f331-7aff-42fe-b4bd-abc9bda52edd",
+              "name": "sender_type",
+              "value": "human",
+              "type": "string"
+            },
+            {
+              "id": "6732d670-b0d3-45e0-9aec-98e189359256",
+              "name": "agent_id",
+              "value": "={{ $json.staff_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -240
+      ],
+      "id": "085fc16a-0cce-4340-9165-b25b5a8c6f7e",
+      "name": "Sender Type = human"
+    },
+    {
+      "parameters": {
+        "width": 2128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -256,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "bbb88533-7059-4f5d-a0c4-a37142c1cd12",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "dim_conversation_sessions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sleekflow_conversation_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.conversation_id }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "open"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        -240
+      ],
+      "id": "7e03a29c-1ec7-4eac-b0a4-4993cc6a44e4",
+      "name": "Get Protocol",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "29df69e4-3af5-4d56-8d1a-78a7e857ecd1",
+              "name": "protocol_number",
+              "value": "={{ $json.protocol_number }}",
+              "type": "string"
+            },
+            {
+              "id": "6908656a-86f2-40f8-b54f-1750332f1a2a",
+              "name": "message_id",
+              "value": "={{ $('filters the trigger').item.json.message_id }}",
+              "type": "string"
+            },
+            {
+              "id": "103204fb-57d7-4fec-bacc-430c8e6cc9ad",
+              "name": "conversation_id",
+              "value": "={{ $('filters the trigger').item.json.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "9931dda4-1ce6-4746-a941-11c72ce4149b",
+              "name": "=sent_at",
+              "value": "={{ $('filters the trigger').item.json.sent_at }}",
+              "type": "string"
+            },
+            {
+              "id": "b4094bd7-7a44-4d39-b1d8-e5f481706c0e",
+              "name": "is_sent_from_sleekflow",
+              "value": "={{ $('filters the trigger').item.json.is_sent_from_sleekflow }}",
+              "type": "string"
+            },
+            {
+              "id": "f352de36-6e1b-45fb-b64f-480920badcad",
+              "name": "staff_id",
+              "value": "={{ $('filters the trigger').item.json.staff_id }}",
+              "type": "string"
+            },
+            {
+              "id": "2aea0b32-a4bd-4688-a8f1-5c6771cce297",
+              "name": "message_delivery_type",
+              "value": "={{ $('filters the trigger').item.json.message_delivery_type }}",
+              "type": "string"
+            },
+            {
+              "id": "05bf3c85-3dd0-4167-9758-acf31aeb3dc7",
+              "name": "protocol_number",
+              "value": "={{ $json.protocol_number }}",
+              "type": "string"
+            },
+            {
+              "id": "9c03b3bd-ff14-4b9a-b5f8-c663f4fa05f5",
+              "name": "message_text",
+              "value": "={{ $('filters the trigger').item.json.message_text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        16,
+        -240
+      ],
+      "id": "57c5470a-9242-4a1f-876c-592623983465",
+      "name": "Add Protocol"
+    },
+    {
+      "parameters": {
+        "tableId": "fact_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message_id",
+              "fieldValue": "={{ $json.message_id }}"
+            },
+            {
+              "fieldId": "protocol_number",
+              "fieldValue": "={{ $json.protocol_number }}"
+            },
+            {
+              "fieldId": "agent_id",
+              "fieldValue": "={{ $json.agent_id }}"
+            },
+            {
+              "fieldId": "sender_type",
+              "fieldValue": "={{ $json.sender_type }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $json.sent_at }}"
+            },
+            {
+              "fieldId": "sleekflow_conversation_id",
+              "fieldValue": "={{ $json.conversation_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2352,
+        -368
+      ],
+      "id": "d030922e-69d8-4f4f-82f5-f80a4a9dd448",
+      "name": "Create a row in fact-messages",
+      "credentials": {
+        "supabaseApi": {
+          "id": "KrJJTonTudWxCF8w",
+          "name": "Supabase - SleekFlow - support-dashboard"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        592,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "e63b8670-b2e5-44f1-85f2-df710dd2acb2",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=conversation_{{ $json.protocol_number }}",
+        "messageData": "={{ JSON.stringify({ sender_type: $json.sender_type, text: $json.message_text }) }}",
+        "tail": true
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2352,
+        -128
+      ],
+      "id": "ad470627-5f7b-4441-b3c8-92ee3c40f6b0",
+      "name": "CREATE TEMPORARY MEMORY FOR AI TO USE FOR CATEGORIZATION",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "redis": {
+          "id": "BBpNKLgJKcviXLX1",
+          "name": "Redis - Pessoal - Kaique (data)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1632,
+        -256
+      ],
+      "id": "8d289132-25af-494c-a8c8-3aa1d5562e99",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        -128
+      ],
+      "id": "76ab12e2-62fb-4f42-bf1c-1fecad630f85",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        -368
+      ],
+      "id": "13ccca4e-d0ff-4fd8-abfb-3ababc970540",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "message_id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        -240
+      ],
+      "id": "13000b7f-4b35-41d5-94d6-b368260a684a",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -432,
+        -240
+      ],
+      "id": "22d97ddd-8bad-422a-99d9-8142f39ac21d",
+      "name": "Wait protocol to be created",
+      "webhookId": "614ebc91-4749-4869-bfa2-357397553648"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "filters the trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filters the trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait protocol to be created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separate the AI message from the human": {
+      "main": [
+        [
+          {
+            "node": "Sender Type = ai",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sender Type = human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separate the company message from the customer's message": {
+      "main": [
+        [
+          {
+            "node": "Separate the AI message from the human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sender Type = customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sender Type = ai": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sender Type = human": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sender Type = customer": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Protocol": {
+      "main": [
+        [
+          {
+            "node": "Add Protocol",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Protocol": {
+      "main": [
+        [
+          {
+            "node": "Separate the company message from the customer's message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row in fact-messages": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CREATE TEMPORARY MEMORY FOR AI TO USE FOR CATEGORIZATION": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "CREATE TEMPORARY MEMORY FOR AI TO USE FOR CATEGORIZATION",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a row in fact-messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait protocol to be created": {
+      "main": [
+        [
+          {
+            "node": "Get Protocol",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "eb6132ce-f5bf-4e52-8bf3-5f9461652944",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6ce26c63596f0cc4323563c529acfca0cccb0e57f6533d79a60a42c9ff862ae7"
+  },
+  "nodeGroups": [],
+  "id": "ZjGP3iR4hmOT4o8Q",
+  "tags": []
+}
